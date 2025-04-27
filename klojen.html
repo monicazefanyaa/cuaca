@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prakiraan Cuaca Kecamatan Klojen</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 20px;
+        background-color: #f0f8ff;
+        color: #333;
+      }
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: rgb(105, 193, 228);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #000000;
+        text-align: center;
+        margin-bottom: 5px;
+      }
+      .location-info {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #7f8c8d;
+      }
+      .weather-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+      }
+      .weather-card {
+        flex: 1;
+        min-width: 250px;
+        background: linear-gradient(135deg, #e6f7ff 0%, #f0f8ff 100%);
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .weather-date {
+        font-weight: bold;
+        color: #29b94f;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+      }
+      .weather-icon {
+        font-size: 60px;
+        text-align: center;
+        margin: 10px 0;
+      }
+      .weather-data {
+        margin-top: 10px;
+      }
+      .temp-max {
+        color: #e74c3c;
+        font-weight: bold;
+      }
+      .temp-min {
+        color: #3498db;
+        font-weight: bold;
+      }
+      .precipitation {
+        color: #2980b9;
+      }
+      #loading {
+        text-align: center;
+        padding: 20px;
+        font-style: italic;
+      }
+      .footer {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 12px;
+        color: #7f8c8d;
+      }
+      @media (max-width: 768px) {
+        .weather-card {
+          min-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Prakiraan Cuaca Kecamatan Klojen</h1>
+      <div class="location-info">
+        <p>Koordinat: -7.973° LS, 112.6087° BT | Zona Waktu: Asia/Jakarta</p>
+      </div>
+
+      <div id="loading">Memuat data cuaca...</div>
+
+      <div id="weather-container" class="weather-container">
+        <!-- Data cuaca akan dimuat di sini -->
+      </div>
+
+      <div class="footer">
+        <p>
+          Data cuaca disediakan oleh
+          <a href="https://open-meteo.com/" target="_blank">Open-Meteo</a>
+        </p>
+        <p>Terakhir diperbarui: <span id="update-time"></span></p>
+        <p>monicazefanya2025></p>
+      </div>
+    </div>
+
+    <script>
+      // Fungsi utama yang akan dijalankan saat halaman siap
+      function loadWeatherData() {
+        // Koordinat Kecamatan Klojen
+        const latitude = -7.973;
+        const longitude = 112.6087;
+
+        // URL API dengan parameter yang diminta
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=-7.973&longitude=112.6087&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia%2FBangkok&forecast_days=3`;
+
+        // Elemen untuk menampilkan data
+        const weatherContainer = document.getElementById("weather-container");
+        const loadingElement = document.getElementById("loading");
+        const updateTimeElement = document.getElementById("update-time");
+
+        // Fungsi untuk memformat tanggal
+        function formatDate(dateString) {
+          const options = { weekday: "long", day: "numeric", month: "long" };
+          return new Date(dateString).toLocaleDateString("id-ID", options);
+        }
+
+        // Fungsi untuk mendapatkan ikon cuaca berdasarkan presipitasi
+        function getWeatherIcon(precipitation) {
+          if (precipitation > 5) return "🌧️"; // Hujan deras
+          if (precipitation > 0.5) return "🌦️"; // Hujan ringan
+          return "☀️"; // Cerah
+        }
+
+        // Fungsi untuk menampilkan data cuaca
+        function displayWeather(data) {
+          loadingElement.style.display = "none";
+
+          // Kosongkan container sebelum menambahkan data baru
+          weatherContainer.innerHTML = "";
+
+          // Tampilkan data cuaca untuk 3 hari
+          data.daily.time.forEach((date, index) => {
+            const tempMax = data.daily.temperature_2m_max[index];
+            const tempMin = data.daily.temperature_2m_min[index];
+            const precipitation = data.daily.precipitation_sum[index];
+
+            const weatherCard = document.createElement("div");
+            weatherCard.className = "weather-card";
+            weatherCard.innerHTML = `
+                        <div class="weather-date">${formatDate(date)}</div>
+                        <div class="weather-icon">${getWeatherIcon(
+                          precipitation
+                        )}</div>
+                        <div class="weather-data">
+                            <p>Temperature Max: <span class="temp-max">${tempMax}°C</span></p>
+                            <p>Temperature Min: <span class="temp-min">${tempMin}°C</span></p>
+                            <p>Precipitation Sum: <span class="precipitation">${precipitation} mm</span></p>
+                        </div>
+                    `;
+
+            weatherContainer.appendChild(weatherCard);
+          });
+
+          // Tampilkan waktu terakhir update
+          updateTimeElement.textContent = new Date().toLocaleString("id-ID");
+        }
+
+        // Fetch data dari API
+        fetch(apiUrl)
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Gagal mengambil data cuaca");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            displayWeather(data);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            loadingElement.textContent =
+              "Gagal memuat data cuaca. Silakan coba lagi.";
+          });
+      }
+
+      // Jalankan fungsi saat halaman selesai dimuat
+      document.addEventListener("DOMContentLoaded", loadWeatherData);
+    </script>
+  </body>
+</html>
